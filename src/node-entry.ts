@@ -1,14 +1,13 @@
 // Node entrypoint for the self-hosted (Docker) deployment.
 //
 // Delegates to run.ts for all bot logic; this file only provides the
-// file-backed SeenStore adapter and the polling loop.
+// file-backed HandledStore adapter and the polling loop.
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { runOnce, type SeenStore } from "./run";
+import { runOnce, type HandledStore } from "./run";
 
 const STATE_FILE = process.env.STATE_FILE || "./data/state.json";
-const SEEN_TTL = 60 * 60 * 24 * 30;
 
 function parseMaxPosts(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
@@ -17,22 +16,18 @@ function parseMaxPosts(value: string | undefined, fallback: number): number {
 }
 
 interface State {
-  bootstrapped: boolean;
-  seen: Record<string, { status: string; ts: number }>;
+  lastHandledAt: number | null;
 }
 
 async function loadState(): Promise<State> {
   try {
     const raw = await fs.readFile(STATE_FILE, "utf8");
-    const parsed = JSON.parse(raw) as State;
-    const cutoff = Math.floor(Date.now() / 1000) - SEEN_TTL;
-    const seen: State["seen"] = {};
-    for (const [k, v] of Object.entries(parsed.seen || {})) {
-      if (v.ts >= cutoff) seen[k] = v;
-    }
-    return { bootstrapped: parsed.bootstrapped === true, seen };
+    const parsed = JSON.parse(raw);
+    // Gracefully handle old format ({ bootstrapped, seen }) or missing field.
+    const value = parsed.lastHandledAt;
+    return { lastHandledAt: (typeof value === "number") ? value : null };
   } catch (err: any) {
-    if (err.code === "ENOENT") return { bootstrapped: false, seen: {} };
+    if (err.code === "ENOENT") return { lastHandledAt: null };
     throw err;
   }
 }
@@ -44,26 +39,26 @@ async function saveState(state: State): Promise<void> {
   await fs.rename(tmp, STATE_FILE);
 }
 
-// File-backed SeenStore. Loads state once per run, writes once at the end.
-function fileStore(): SeenStore & { flush: () => Promise<void> } {
+// File-backed HandledStore. Loads state once per run, writes once at the end.
+function fileStore(): HandledStore & { flush: () => Promise<void> } {
   let state: Promise<State> | null = null;
   const ensure = () => state || (state = loadState());
+  let dirty = false;
 
   return {
-    async get(key: string) {
+    async getLastHandledAt() {
       const s = await ensure();
-      if (key === "__bootstrapped__") return s.bootstrapped ? "true" : null;
-      return s.seen[key]?.status ?? null;
+      return s.lastHandledAt;
     },
 
-    async put(key: string, value: string) {
+    async setLastHandledAt(value: number) {
       const s = await ensure();
-      if (key === "__bootstrapped__") s.bootstrapped = true;
-      else s.seen[key] = { status: value, ts: Math.floor(Date.now() / 1000) };
+      s.lastHandledAt = value;
+      dirty = true;
     },
 
     async flush() {
-      if (state) await saveState(await state);
+      if (dirty && state) await saveState(await state);
     },
   };
 }
