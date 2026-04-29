@@ -18,6 +18,12 @@ export interface Env {
 
 const SEEN_TTL = 60 * 60 * 24 * 30;
 
+function parseMaxPosts(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function kvStore(kv: KVNamespace): SeenStore {
   return {
     get: (key) => kv.get(key),
@@ -29,11 +35,11 @@ export default {
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(runOnce(kvStore(env.SEEN), {
       feedUrl: env.FEED_URL,
-      maxPosts: env.MAX_POSTS_PER_RUN ? parseInt(env.MAX_POSTS_PER_RUN, 10) : 10,
+      maxPosts: parseMaxPosts(env.MAX_POSTS_PER_RUN, 3),
       bootstrapSilent: (env.BOOTSTRAP_SILENT ?? "true") !== "false",
       bskyHandle: env.BSKY_HANDLE,
       bskyPassword: env.BSKY_APP_PASSWORD,
-    }, (m) => console.log(m)));
+    }, (m) => console.log(m)).catch((err) => console.error(`scheduled run failed: ${(err as Error).message}`)));
   },
 
   async fetch(req: Request, env: Env): Promise<Response> {
@@ -43,7 +49,7 @@ export default {
       try {
         await runOnce(kvStore(env.SEEN), {
           feedUrl: env.FEED_URL,
-          maxPosts: env.MAX_POSTS_PER_RUN ? parseInt(env.MAX_POSTS_PER_RUN, 10) : 10,
+          maxPosts: parseMaxPosts(env.MAX_POSTS_PER_RUN, 3),
           bootstrapSilent: (env.BOOTSTRAP_SILENT ?? "true") !== "false",
           bskyHandle: env.BSKY_HANDLE,
           bskyPassword: env.BSKY_APP_PASSWORD,

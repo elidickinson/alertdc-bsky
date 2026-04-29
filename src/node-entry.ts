@@ -10,6 +10,12 @@ import { runOnce, type SeenStore } from "./run";
 const STATE_FILE = process.env.STATE_FILE || "./data/state.json";
 const SEEN_TTL = 60 * 60 * 24 * 30;
 
+function parseMaxPosts(value: string | undefined, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 interface State {
   bootstrapped: boolean;
   seen: Record<string, { status: string; ts: number }>;
@@ -78,7 +84,7 @@ async function main(): Promise<void> {
     try {
       await runOnce(store, {
         feedUrl: process.env.FEED_URL,
-        maxPosts: parseInt(process.env.MAX_POSTS_PER_RUN || "10", 10),
+        maxPosts: parseMaxPosts(process.env.MAX_POSTS_PER_RUN, 3),
         bootstrapSilent: (process.env.BOOTSTRAP_SILENT ?? "true") !== "false",
         bskyHandle: handle,
         bskyPassword: password,

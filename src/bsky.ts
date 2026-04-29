@@ -61,8 +61,9 @@ export function buildPost(body: string, sourceUrl: string, prefix?: string): Bui
     return { text: noLink };
   }
 
-  // Truncate. Reserve 1 char for ellipsis.
-  const target = BSKY_MAX_LEN - 1 - tag.length;
+  // Truncate. Reserve 1 char for ellipsis, plus buffer for emoji (each can be 2+ code units).
+  const GRAPHEME_BUFFER = 10;
+  const target = BSKY_MAX_LEN - 1 - tag.length - GRAPHEME_BUFFER;
   return { text: `${tag}${[...cleaned].slice(0, target).join("")}…` };
 }
 

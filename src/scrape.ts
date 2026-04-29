@@ -3,10 +3,10 @@
 // The old HSEMA RSS feed (trainingtrack.hsema.dc.gov) is dead; Everbridge is
 // the current backend for AlertDC. JSON is simpler and more reliable than RSS.
 
-export const FEED_URL =
-  "https://member.everbridge.net/rest/notif/page?orgId=1332612387832012&pageNo=1&pageSize=25";
-
 const ORG_ID = "1332612387832012";
+
+export const FEED_URL =
+  `https://member.everbridge.net/rest/notif/page?orgId=${ORG_ID}&pageNo=1&pageSize=25`;
 
 export function alertUrl(id: string): string {
   return `https://member.everbridge.net/${ORG_ID}/notif/${id}`;
@@ -25,6 +25,7 @@ export async function fetchAlerts(url: string = FEED_URL): Promise<Alert[]> {
       "User-Agent": "alertdc-bsky-bot/1.0",
       Accept: "application/json",
     },
+    signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
     throw new Error(`fetch ${url} failed: ${res.status} ${res.statusText}`);

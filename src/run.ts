@@ -63,7 +63,9 @@ export async function runOnce(
   log(`${toPost.length} alerts to post`);
   if (toPost.length === 0) return;
 
-  // API returns newest-first; reverse for chronological posting order.
+  // API returns newest-first; reverse to post oldest first (chronological).
+  // Capping keeps oldest alerts, newer ones are marked skipped and will
+  // be posted on subsequent runs.
   toPost.reverse();
 
   const batch = toPost.slice(0, config.maxPosts);
