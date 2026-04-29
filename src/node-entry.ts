@@ -86,9 +86,13 @@ async function main(): Promise<void> {
     } catch (err) {
       console.error(`run failed: ${(err as Error).message}`);
     } finally {
+      try {
+        await store.flush();
+      } catch (err) {
+        console.error(`flush failed: ${(err as Error).message}`);
+      }
       running = false;
     }
-    await store.flush();
   };
 
   await tick();

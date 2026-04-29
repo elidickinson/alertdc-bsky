@@ -4,7 +4,7 @@
 // bot logic; this file only provides the KV-backed SeenStore adapter and
 // the Worker fetch/scheduled handlers.
 
-import { runOnce, type SeenStore, type RunConfig } from "./run";
+import { runOnce, type SeenStore } from "./run";
 
 export interface Env {
   BSKY_HANDLE: string;

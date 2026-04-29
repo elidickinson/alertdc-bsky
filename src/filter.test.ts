@@ -14,6 +14,18 @@ describe("classify", () => {
     expect(classify(alert("crime alert 5th District (PSA 501-508)")).kind).toBe("drop");
   });
 
+  it("handles case-insensitive crime alert variations", () => {
+    expect(classify(alert("CRIME ALERT 1st District")).kind).toBe("drop");
+    expect(classify(alert("Crime alert 2nd District")).kind).toBe("drop");
+    expect(classify(alert("CRIME alert 3rd District")).kind).toBe("drop");
+    // With punctuation
+    expect(classify(alert("Crime Alert: 4th District")).kind).toBe("drop");
+    expect(classify(alert("Crime Alert - 5th District")).kind).toBe("drop");
+    expect(classify(alert("Crime Alert (6th District)")).kind).toBe("drop");
+    // Should not match if "Crime Alert" appears later in title
+    expect(classify(alert("Update: Crime Alert 7th District")).kind).toBe("post");
+  });
+
   it("posts Final Update for road closures (even with police activity)", () => {
     expect(classify(alert("[AlertDC] Final Update: Road Closure / Police Activity (17th Street, NW)")))
       .toEqual({ kind: "post", category: "traffic" });

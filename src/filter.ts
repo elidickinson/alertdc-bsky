@@ -27,6 +27,7 @@ const CATEGORY_RULES: [RegExp, string][] = [
 export function classify(alert: Alert): Classification {
   const t = alert.title.trim();
   if (!t) return { kind: "drop", reason: "empty title" };
+  // Case-insensitive check for crime alerts (handles "CRIME ALERT", "crime alert", etc.)
   if (/^Crime Alert\b/i.test(t)) return { kind: "drop", reason: "crime alert" };
 
   for (const [re, category] of CATEGORY_RULES) {

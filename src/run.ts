@@ -22,7 +22,6 @@ export interface RunConfig {
   bskyPassword: string;
 }
 
-const SEEN_TTL = 30 * 24 * 60 * 60; // 30 days (used by KV expiration; ignored by file store)
 const BOOTSTRAP_KEY = "__bootstrapped__";
 
 export async function runOnce(
