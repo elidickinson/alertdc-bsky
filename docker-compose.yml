@@ -1,0 +1,9 @@
+services:
+  alertdc-bsky:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ../files/alertdc-bsky:/app/data
