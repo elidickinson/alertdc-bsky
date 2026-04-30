@@ -15,10 +15,13 @@ const PDS = "https://bsky.social";
 const LINK_LABEL = "link";
 
 export async function login(handle: string, appPassword: string): Promise<Session> {
+  console.log(`[bsky] login attempt with handle: ${handle}, password length: ${appPassword.length}`);
+  const body = JSON.stringify({ identifier: handle, password: appPassword });
+  console.log(`[bsky] request body: ${body}`);
   const res = await fetch(`${PDS}/xrpc/com.atproto.server.createSession`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ identifier: handle, password: appPassword }),
+    body,
   });
   if (!res.ok) {
     const detail = await res.text();
