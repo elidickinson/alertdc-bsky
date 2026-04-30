@@ -2,8 +2,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install deps. We only need tsx + typescript at runtime; everything else is
-# devDependencies for the Workers build.
+# Install production deps only.
 COPY package.json ./
 RUN npm install --omit=dev --omit=optional --no-audit --no-fund
 

@@ -6,6 +6,7 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import { runOnce, type HandledStore } from "./run";
+import type { AtpSessionData } from "./bsky";
 
 const STATE_FILE = process.env.STATE_FILE || "./data/state.json";
 
@@ -17,17 +18,20 @@ function parseMaxPosts(value: string | undefined, fallback: number): number {
 
 interface State {
   lastHandledAt: number | null;
+  session: AtpSessionData | null;
 }
 
 async function loadState(): Promise<State> {
   try {
     const raw = await fs.readFile(STATE_FILE, "utf8");
     const parsed = JSON.parse(raw);
-    // Gracefully handle old format ({ bootstrapped, seen }) or missing field.
     const value = parsed.lastHandledAt;
-    return { lastHandledAt: (typeof value === "number") ? value : null };
+    return {
+      lastHandledAt: (typeof value === "number") ? value : null,
+      session: parsed.session ?? null,
+    };
   } catch (err: any) {
-    if (err.code === "ENOENT") return { lastHandledAt: null };
+    if (err.code === "ENOENT") return { lastHandledAt: null, session: null };
     throw err;
   }
 }
@@ -39,7 +43,6 @@ async function saveState(state: State): Promise<void> {
   await fs.rename(tmp, STATE_FILE);
 }
 
-// File-backed HandledStore. Loads state once per run, writes once at the end.
 function fileStore(): HandledStore & { flush: () => Promise<void> } {
   let state: Promise<State> | null = null;
   const ensure = () => state || (state = loadState());
@@ -54,6 +57,17 @@ function fileStore(): HandledStore & { flush: () => Promise<void> } {
     async setLastHandledAt(value: number) {
       const s = await ensure();
       s.lastHandledAt = value;
+      dirty = true;
+    },
+
+    async getSession() {
+      const s = await ensure();
+      return s.session;
+    },
+
+    async setSession(session: AtpSessionData) {
+      const s = await ensure();
+      s.session = session;
       dirty = true;
     },
 
