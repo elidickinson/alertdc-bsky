@@ -47,24 +47,17 @@ export function buildPost(body: string, sourceUrl: string, prefix?: string): Bui
   const cleaned = body.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
   const withLink = `${tag}${cleaned}${linkSuffix}`;
-  if (withLink.length <= BSKY_MAX_LEN) {
-    const linkStart = new TextEncoder().encode(withLink.slice(0, withLink.lastIndexOf(LINK_LABEL))).length;
-    const linkEnd = linkStart + new TextEncoder().encode(LINK_LABEL).length;
-    return {
-      text: withLink,
-      facets: [{
-        index: { byteStart: linkStart, byteEnd: linkEnd },
-        features: [{ $type: "app.bsky.richtext.facet#link", uri: sourceUrl }],
-      }],
-    };
-  }
+  const text = withLink.length <= BSKY_MAX_LEN
+    ? withLink
+    : `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
 
-  const noLink = `${tag}${cleaned}`;
-  if (noLink.length <= BSKY_MAX_LEN) {
-    return { text: noLink };
-  }
-
-  const GRAPHEME_BUFFER = 10;
-  const target = BSKY_MAX_LEN - 1 - tag.length - GRAPHEME_BUFFER;
-  return { text: `${tag}${[...cleaned].slice(0, target).join("")}…` };
+  const linkStart = new TextEncoder().encode(text.slice(0, text.lastIndexOf(LINK_LABEL))).length;
+  const linkEnd = linkStart + new TextEncoder().encode(LINK_LABEL).length;
+  return {
+    text,
+    facets: [{
+      index: { byteStart: linkStart, byteEnd: linkEnd },
+      features: [{ $type: "app.bsky.richtext.facet#link", uri: sourceUrl }],
+    }],
+  };
 }

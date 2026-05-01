@@ -91,15 +91,15 @@ describe("buildPost", () => {
     expect(out.facets![0].features[0].uri).toBe(URL);
   });
 
-  it("omits the link if body + link label would push past 300", () => {
+  it("includes link even when body is truncated", () => {
     const out = buildPost("x".repeat(295), URL, "⛈️");
-    expect(out.text).not.toContain("link");
-    expect(out.facets).toBeUndefined();
+    expect(out.text.endsWith(" link")).toBe(true);
+    expect(out.facets).toBeDefined();
   });
 
   it("truncates when even the body exceeds 300", () => {
     const out = buildPost("x".repeat(500), URL, "⛈️");
-    expect(out.text.endsWith("…")).toBe(true);
+    expect(out.text.endsWith("… link")).toBe(true);
     expect(out.text.length).toBeLessThanOrEqual(300);
   });
 
