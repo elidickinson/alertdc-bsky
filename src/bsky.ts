@@ -23,12 +23,17 @@ export async function resumeOrLogin(
   storedSession: AtpSessionData | null,
   handle: string,
   appPassword: string,
+  log?: (msg: string) => void,
 ): Promise<void> {
   if (storedSession) {
-    await agent.resumeSession(storedSession);
-  } else {
-    await agent.login({ identifier: handle, password: appPassword });
+    try {
+      await agent.resumeSession(storedSession);
+      return;
+    } catch (err) {
+      log?.(`session resume failed: ${(err as Error).message}; re-logging in`);
+    }
   }
+  await agent.login({ identifier: handle, password: appPassword });
 }
 
 export interface BuiltPost {

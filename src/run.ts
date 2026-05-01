@@ -83,7 +83,7 @@ export async function runOnce(
 
   const agent = createAgent((session) => store.setSession(session));
   const storedSession = await store.getSession();
-  await resumeOrLogin(agent, storedSession, config.bskyHandle, config.bskyPassword);
+  await resumeOrLogin(agent, storedSession, config.bskyHandle, config.bskyPassword, log);
   log(`bsky session as ${agent.session?.handle}`);
 
   for (const { alert, category } of batch) {

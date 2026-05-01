@@ -19,11 +19,11 @@ export type Classification =
   | { kind: "drop"; reason: string };
 
 const CATEGORY_RULES: [RegExp, string][] = [
-  [/Final Update/i, "final"],
   [/Tornado|Severe Weather|Snow Emergency|Cold Alert|Heat (?:Alert|Emergency)|Flood|Winter Storm|NWS\b/i, "weather"],
   [/special event|parking restriction|street closure/i, "event"],
   [/DDOT|Tunnel|Lane|Road Closure|Traffic/i, "traffic"],
   [/Secret Service|Police Activity/i, "police"],
+  [/Final Update/i, "final"],
 ];
 
 export function classify(alert: Alert): Classification {
