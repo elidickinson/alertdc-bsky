@@ -43,7 +43,7 @@ export interface BuiltPost {
 
 export function buildPost(body: string, sourceUrl: string, prefix?: string): BuiltPost {
   const tag = prefix ? `${prefix} ` : "";
-  const linkSuffix = `\n\n${LINK_LABEL}`;
+  const linkSuffix = ` ${LINK_LABEL}`;
   const cleaned = body.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
   const withLink = `${tag}${cleaned}${linkSuffix}`;
