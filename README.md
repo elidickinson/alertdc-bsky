@@ -1,16 +1,14 @@
 # alertdc-bsky
 
-A Bluesky bot that mirrors **AlertDC** (DC's emergency notifications), excluding crime alerts.
+A Bluesky bot that mirrors **[AlertDC](https://hsema.dc.gov/page/alertdc)** (DC's emergency notifications). It filters out all the noisy and unhelpful alerts for minor crimes..
 
 ## How it works
 
-The bot tracks a **lastHandledAt** watermark — the timestamp of the most recent alert that was "handled" (either dropped by the filter or successfully posted). On each run, it processes alerts newer than the watermark:
+The bot fetches the JSON API that powers the [official AlertDC alerts page](https://hsema.dc.gov/node/848452) and keeps track of the timestamp of the most recent alert that was "handled" (either dropped by the filter or successfully posted). On each run, it processes alerts newer than the timestamp:
 
-- **Dropped** by filter (e.g. crime alerts) → handled, watermark advances
-- **Posted** to Bluesky → handled, watermark advances
+- **Dropped** by filter (e.g. crime alerts) → handled, skipped on next run
+- **Posted** to Bluesky → handled, skipped on next run
 - **Rate-limited** (exceeds max posts per run) → NOT handled, retried next run
-
-The watermark only advances through contiguous handled alerts. If a rate-limited alert sits between handled ones, the watermark stops before it and those later alerts are retried on the next run.
 
 ## Environment variables
 
@@ -23,24 +21,9 @@ The watermark only advances through contiguous handled alerts. If a rate-limited
 | `BOOTSTRAP_SILENT` | no | `true` | If `true`, first run sets watermark to newest alert without posting |
 | `POLL_INTERVAL_SECONDS` | Docker only | `300` | Polling interval in seconds |
 | `STATE_FILE` | Docker only | `./data/state.json` | Path to persistent state file |
-| `TRIGGER_SECRET` | CF Workers optional | — | Secret for manual `/run` endpoint trigger |
+
 
 ## Deploy
-
-**Cloudflare Workers**
-
-```bash
-npm install
-npx wrangler login
-npx wrangler kv namespace create STATE
-npx wrangler secret put BSKY_HANDLE
-npx wrangler secret put BSKY_APP_PASSWORD
-npx wrangler secret put TRIGGER_SECRET   # optional
-npx wrangler deploy
-```
-
-Cron runs every 5 minutes. Manual trigger (if `TRIGGER_SECRET` set):
-`https://alertdc-bsky.<your-subdomain>.workers.dev/run?key=<TRIGGER_SECRET>`
 
 **Docker Compose**
 
@@ -58,7 +41,6 @@ State persisted to `./data/state.json`.
 ```bash
 npm install
 npm test
-npx wrangler dev
 ```
 
 ## Notes

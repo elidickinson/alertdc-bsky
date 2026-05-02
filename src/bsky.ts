@@ -51,12 +51,14 @@ export function buildPost(body: string, sourceUrl: string, prefix?: string): Bui
     ? withLink
     : `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
 
-  const linkStart = new TextEncoder().encode(text.slice(0, text.lastIndexOf(LINK_LABEL))).length;
-  const linkEnd = linkStart + new TextEncoder().encode(LINK_LABEL).length;
+  // Facets use byte offsets, not string indices — text always ends with LINK_LABEL.
+  const encoder = new TextEncoder();
+  const byteEnd = encoder.encode(text).byteLength;
+  const byteStart = byteEnd - encoder.encode(LINK_LABEL).byteLength;
   return {
     text,
     facets: [{
-      index: { byteStart: linkStart, byteEnd: linkEnd },
+      index: { byteStart, byteEnd },
       features: [{ $type: "app.bsky.richtext.facet#link", uri: sourceUrl }],
     }],
   };

@@ -108,12 +108,8 @@ export async function runOnce(
 
   let newWatermark = watermark;
   for (const alert of newAlerts) {
-    if (handledIds.has(alert.id)) {
-      newWatermark = alert.sendDate;
-    } else {
-      if (alert.sendDate <= newWatermark) newWatermark = alert.sendDate - 1;
-      break;
-    }
+    if (!handledIds.has(alert.id)) break;
+    newWatermark = alert.sendDate;
   }
 
   await store.setLastHandledAt(newWatermark);

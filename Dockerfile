@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install production deps only.
-COPY package.json ./
+COPY package.json package-lock.json ./
 RUN npm install --omit=dev --omit=optional --no-audit --no-fund
 
 COPY tsconfig.json ./
