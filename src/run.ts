@@ -89,10 +89,11 @@ export async function runOnce(
   for (const { alert, category } of batch) {
     const prefix = CATEGORIES[category] || CATEGORIES.other;
     const text = (alert.body || alert.title).replace(/^\[AlertDC\]\s*/, "");
-    const postText = buildPost(text, alertUrl(alert.id), prefix);
+    const post = buildPost(text, alertUrl(alert.id), prefix);
     try {
       await agent.post({
-        text: postText,
+        text: post.text,
+        facets: post.facets,
         langs: ["en"],
         createdAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
       });

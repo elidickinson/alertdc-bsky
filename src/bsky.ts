@@ -1,5 +1,5 @@
 import { AtpAgent } from "@atproto/api";
-import type { AtpSessionData } from "@atproto/api";
+import type { AppBskyRichtextFacet, AtpSessionData } from "@atproto/api";
 
 export type { AtpSessionData };
 
@@ -35,7 +35,12 @@ export async function resumeOrLogin(
   await agent.login({ identifier: handle, password: appPassword });
 }
 
-export function buildPost(body: string, sourceUrl: string, prefix?: string): string {
+export interface BuiltPost {
+  text: string;
+  facets: AppBskyRichtextFacet.Main[];
+}
+
+export function buildPost(body: string, sourceUrl: string, prefix?: string): BuiltPost {
   const tag = prefix ? `${prefix} ` : "";
   const linkSuffix = ` ${sourceUrl}`;
   const cleaned = body.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
@@ -45,5 +50,16 @@ export function buildPost(body: string, sourceUrl: string, prefix?: string): str
     ? withLink
     : `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
 
-  return text;
+  const encoder = new TextEncoder();
+  const byteEnd = encoder.encode(text).byteLength;
+  const byteStart = byteEnd - encoder.encode(sourceUrl).byteLength;
+
+  return {
+    text,
+    facets: [{
+      $type: "app.bsky.richtext.facet",
+      index: { byteStart, byteEnd },
+      features: [{ $type: "app.bsky.richtext.facet#link", uri: sourceUrl }],
+    }],
+  };
 }
