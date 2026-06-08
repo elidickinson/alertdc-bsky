@@ -5,7 +5,6 @@ export type { AtpSessionData };
 
 const PDS = "https://bsky.social";
 const BSKY_MAX_LEN = 300;
-const LINK_LABEL = "link";
 
 export type SessionPersist = (session: AtpSessionData) => void;
 
@@ -36,14 +35,9 @@ export async function resumeOrLogin(
   await agent.login({ identifier: handle, password: appPassword });
 }
 
-export interface BuiltPost {
-  text: string;
-  facets?: any[];
-}
-
-export function buildPost(body: string, sourceUrl: string, prefix?: string): BuiltPost {
+export function buildPost(body: string, sourceUrl: string, prefix?: string): string {
   const tag = prefix ? `${prefix} ` : "";
-  const linkSuffix = ` ${LINK_LABEL}`;
+  const linkSuffix = ` ${sourceUrl}`;
   const cleaned = body.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
   const withLink = `${tag}${cleaned}${linkSuffix}`;
@@ -51,15 +45,5 @@ export function buildPost(body: string, sourceUrl: string, prefix?: string): Bui
     ? withLink
     : `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
 
-  // Facets use byte offsets, not string indices — text always ends with LINK_LABEL.
-  const encoder = new TextEncoder();
-  const byteEnd = encoder.encode(text).byteLength;
-  const byteStart = byteEnd - encoder.encode(LINK_LABEL).byteLength;
-  return {
-    text,
-    facets: [{
-      index: { byteStart, byteEnd },
-      features: [{ $type: "app.bsky.richtext.facet#link", uri: sourceUrl }],
-    }],
-  };
+  return text;
 }

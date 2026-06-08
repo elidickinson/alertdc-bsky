@@ -83,33 +83,20 @@ describe("classify", () => {
 describe("buildPost", () => {
   const URL = "https://member.everbridge.net/1332612387832012/notif/64053";
 
-  it("adds a clickable link facet", () => {
-    const out = buildPost("Tornado Watch for DC: Until 7PM today.", URL, "⛈️");
-    expect(out.text).toContain("link");
-    expect(out.text).not.toContain("everbridge.net");
-    expect(out.facets).toBeDefined();
-    expect(out.facets![0].features[0].uri).toBe(URL);
+  it("adds the source URL directly", () => {
+    const text = buildPost("Tornado Watch for DC: Until 7PM today.", URL, "⛈️");
+    expect(text).toContain(URL);
   });
 
-  it("includes link even when body is truncated", () => {
-    const out = buildPost("x".repeat(295), URL, "⛈️");
-    expect(out.text.endsWith(" link")).toBe(true);
-    expect(out.facets).toBeDefined();
+  it("includes source URL even when body is truncated", () => {
+    const text = buildPost("x".repeat(295), URL, "⛈️");
+    expect(text.endsWith(` ${URL}`)).toBe(true);
   });
 
   it("truncates when even the body exceeds 300", () => {
-    const out = buildPost("x".repeat(500), URL, "⛈️");
-    expect(out.text.endsWith("… link")).toBe(true);
-    expect(out.text.length).toBeLessThanOrEqual(300);
-  });
-
-  it("link facet byte offsets match the \"link\" text position", () => {
-    const out = buildPost("Hello", URL, "⛈️");
-    expect(out.facets).toBeDefined();
-    const f = out.facets![0];
-    const bytes = new TextEncoder().encode(out.text);
-    const slice = new TextDecoder().decode(bytes.slice(f.index.byteStart, f.index.byteEnd));
-    expect(slice).toBe("link");
+    const text = buildPost("x".repeat(500), URL, "⛈️");
+    expect(text.endsWith(`… ${URL}`)).toBe(true);
+    expect(text.length).toBeLessThanOrEqual(300);
   });
 });
 
