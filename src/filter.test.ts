@@ -83,26 +83,33 @@ describe("classify", () => {
 describe("buildPost", () => {
   const URL = "https://member.everbridge.net/1332612387832012/notif/64053";
 
-  it("adds a clickable source URL facet", () => {
+  it("does not add a source URL when the full text fits", () => {
     const post = buildPost("Tornado Watch for DC: Until 7PM today.", URL, "⛈️");
-    const facet = post.facets[0];
+
+    expect(post.text).toBe("⛈️ Tornado Watch for DC: Until 7PM today.");
+    expect(post.text).not.toContain(URL);
+    expect(post).not.toHaveProperty("facets");
+  });
+
+  it("does not add a source URL just because the URL would make it too long", () => {
+    const post = buildPost("x".repeat(295), URL, "⛈️");
+
+    expect(post.text).not.toContain(URL);
+    expect(post.text.length).toBeLessThanOrEqual(300);
+    expect(post).not.toHaveProperty("facets");
+  });
+
+  it("adds a clickable source URL facet when truncating", () => {
+    const post = buildPost("x".repeat(500), URL, "⛈️");
+    expect(post.facets).toBeDefined();
+    const facet = post.facets![0];
     const bytes = new TextEncoder().encode(post.text);
     const linkedText = new TextDecoder().decode(bytes.slice(facet.index.byteStart, facet.index.byteEnd));
 
-    expect(post.text).toContain(URL);
-    expect(linkedText).toBe(URL);
-    expect(facet.features[0]).toEqual({ $type: "app.bsky.richtext.facet#link", uri: URL });
-  });
-
-  it("includes source URL even when body is truncated", () => {
-    const post = buildPost("x".repeat(295), URL, "⛈️");
-    expect(post.text.endsWith(` ${URL}`)).toBe(true);
-  });
-
-  it("truncates when even the body exceeds 300", () => {
-    const post = buildPost("x".repeat(500), URL, "⛈️");
     expect(post.text.endsWith(`… ${URL}`)).toBe(true);
     expect(post.text.length).toBeLessThanOrEqual(300);
+    expect(linkedText).toBe(URL);
+    expect(facet.features[0]).toEqual({ $type: "app.bsky.richtext.facet#link", uri: URL });
   });
 });
 

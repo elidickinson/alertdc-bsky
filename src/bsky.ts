@@ -37,18 +37,20 @@ export async function resumeOrLogin(
 
 export interface BuiltPost {
   text: string;
-  facets: AppBskyRichtextFacet.Main[];
+  facets?: AppBskyRichtextFacet.Main[];
 }
 
 export function buildPost(body: string, sourceUrl: string, prefix?: string): BuiltPost {
   const tag = prefix ? `${prefix} ` : "";
-  const linkSuffix = ` ${sourceUrl}`;
   const cleaned = body.replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  const fullText = `${tag}${cleaned}`;
 
-  const withLink = `${tag}${cleaned}${linkSuffix}`;
-  const text = withLink.length <= BSKY_MAX_LEN
-    ? withLink
-    : `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
+  if (fullText.length <= BSKY_MAX_LEN) {
+    return { text: fullText };
+  }
+
+  const linkSuffix = ` ${sourceUrl}`;
+  const text = `${tag}${[...cleaned].slice(0, BSKY_MAX_LEN - tag.length - 1 - linkSuffix.length).join("")}…${linkSuffix}`;
 
   const encoder = new TextEncoder();
   const byteEnd = encoder.encode(text).byteLength;

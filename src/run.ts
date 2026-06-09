@@ -93,7 +93,7 @@ export async function runOnce(
     try {
       await agent.post({
         text: post.text,
-        facets: post.facets,
+        ...(post.facets ? { facets: post.facets } : {}),
         langs: ["en"],
         createdAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
       });
